@@ -1,16 +1,16 @@
 {
 	"name": "vasync",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "utilities for observable asynchronous control flow",
 	"main": "./lib/vasync.js",
-	
+
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/davepacheco/node-vasync.git"
 	},
 
 	"dependencies": {
-		"verror": "1.0.0"
+		"verror": "1.0.1"
 	},
 
 	"engines": [ "node >=0.6.0" ]
