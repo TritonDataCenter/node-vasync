@@ -15,6 +15,9 @@ with the following fields:
 
             result          returned "result" value, if any
 
+    successes		"result" field for each of "operations" where
+    			"status" == "ok"
+
     ndone               number of input operations that have completed
 
     nerrors             number of input operations that have failed
@@ -57,6 +60,7 @@ In the first tick, this outputs:
        [ { func: [Function: f1], status: 'pending' },
          { func: [Function: f2], status: 'pending' },
          { func: [Function: f3], status: 'pending' } ],
+      successes: [],
       ndone: 0,
       nerrors: 0 }
 
@@ -116,6 +120,33 @@ errors and return values:
               atime: Fri, 09 Sep 2011 14:28:55 GMT,
               mtime: Wed, 04 Apr 2012 17:51:20 GMT,
               ctime: Wed, 04 Apr 2012 17:51:20 GMT } } ],
+      successes: 
+       [ { dev: 234881026,
+           ino: 24965,
+           mode: 17407,
+           nlink: 8,
+           uid: 0,
+           gid: 0,
+           rdev: 0,
+           size: 272,
+           blksize: 4096,
+           blocks: 0,
+           atime: Tue, 01 May 2012 16:02:24 GMT,
+           mtime: Tue, 01 May 2012 19:10:35 GMT,
+           ctime: Tue, 01 May 2012 19:10:35 GMT },
+         { dev: 234881026,
+           ino: 216,
+           mode: 16877,
+           nlink: 26,
+           uid: 0,
+           gid: 0,
+           rdev: 0,
+           size: 884,
+           blksize: 4096,
+           blocks: 0,
+           atime: Tue, 01 May 2012 16:02:24 GMT,
+           mtime: Fri, 14 Aug 2009 21:23:03 GMT,
+           ctime: Thu, 28 Oct 2010 21:51:39 GMT } ],
       ndone: 3,
       nerrors: 1 }
 
@@ -175,6 +206,7 @@ As a result, the status after the first tick looks like this:
        [ { func: [Function: f1], status: 'pending' },
          { func: [Function: f2], status: 'waiting' },
          { func: [Function: f3], status: 'waiting' } ],
+      successes: [],
       ndone: 0,
       nerrors: 0 }
 
@@ -208,5 +240,19 @@ and the complete result is:
            err: { [Error: ENOENT, no such file or directory '/noexist'] errno: 34, code: 'ENOENT', path: '/noexist' },
            result: undefined },
          { func: [Function: f3], status: 'waiting' } ],
+      successes: 
+       [ { dev: 234881026,
+           ino: 24965,
+           mode: 17407,
+           nlink: 8,
+           uid: 0,
+           gid: 0,
+           rdev: 0,
+           size: 272,
+           blksize: 4096,
+           blocks: 0,
+           atime: Tue, 01 May 2012 16:02:24 GMT,
+           mtime: Tue, 01 May 2012 19:10:35 GMT,
+           ctime: Tue, 01 May 2012 19:10:35 GMT } ],
       ndone: 2,
       nerrors: 1 }
