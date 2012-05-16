@@ -256,3 +256,186 @@ and the complete result is:
            ctime: Tue, 01 May 2012 19:10:35 GMT } ],
       ndone: 2,
       nerrors: 1 }
+
+
+## queue(worker, concurrency): fixed-size worker queue
+## queuev(args)
+
+This function returns an object that allows up to a fixed number of tasks to be
+dispatched at any given time.  The interface is compatible with that provided
+by the "async" Node library, except that the returned object's fields represent
+a public interface you can use to introspect what's going on.
+
+The arguments are:
+
+* worker: a function invoked as `worker(task, callback)`, where `task` is a
+  task dispatched to this queue and `callback` should be invoked when the task
+  completes.
+* concurrency: a positive integer indicating the maximum number of tasks that
+  may be dispatched at any time.
+
+With concurrency = 1, the queue serializes all operations.
+
+The object provides the following method:
+
+* push(task, [callback]): add a task (or array of tasks) to the queue, with an
+  optional callback to be invoked when each task completes.  If a list of tasks
+  are added, the callback is invoked for each one.
+
+The object also provides the length() method, the "concurrency" field, and
+hooks for "saturated", "empty", and "drain" for compatibility with node-async.
+In addition, several fields may be inspected to see what's currently going on
+with the queue, but **these fields must not be modified directly**:
+
+* worker: worker function, as passed into "queue"/"queuev"
+* worker_name: worker function's "name" field
+* npending: the number of tasks currently being processed
+* pending: an object (*not* an array) describing the tasks currently being processed
+* queued: array of tasks currently queued for processing
+
+If the tasks are themselves simple objects, then the entire queue may be
+serialized (as via JSON.stringify) for debugging and monitoring tools.  Using
+the above fields, you can see what this queue is doing (worker_name), which
+tasks are queued, which tasks are being processed, and so on.
+
+### Example 1: Stat several files
+
+Here's an example demonstrating the queue:
+
+    var mod_fs = require('fs');
+    var mod_vasync = require('../lib/vasync');
+    
+    var queue;
+    
+    function doneOne()
+    {
+    	console.log('task completed; queue state:\n%s\n',
+    	    JSON.stringify(queue, null, 4));
+    }
+    
+    queue = mod_vasync.queue(mod_fs.stat, 2);
+    
+    console.log('initial queue state:\n%s\n', JSON.stringify(queue, null, 4));
+    
+    queue.push('/tmp/file1', doneOne);
+    queue.push('/tmp/file2', doneOne);
+    queue.push('/tmp/file3', doneOne);
+    queue.push('/tmp/file4', doneOne);
+    
+    console.log('all tasks dispatched:\n%s\n', JSON.stringify(queue, null, 4));
+
+The initial queue state looks like this:
+
+    initial queue state: 
+    {
+        "nextid": 0,
+        "worker_name": "anon",
+        "npending": 0,
+        "pending": {},
+        "queued": [],
+        "concurrency": 2
+    }
+
+After four tasks have been pushed, we see that two of them have been dispatched
+and the remaining two are queued up:
+
+    all tasks pushed:
+    {
+        "nextid": 4,
+        "worker_name": "anon",
+        "npending": 2,
+        "pending": {
+            "1": {
+                "id": 1,
+                "task": "/tmp/file1"
+            },
+            "2": {
+                "id": 2,
+                "task": "/tmp/file2"
+            }
+        },
+        "queued": [
+            {
+                "id": 3,
+                "task": "/tmp/file3"
+            },
+            {
+                "id": 4,
+                "task": "/tmp/file4"
+            }
+        ],
+        "concurrency": 2
+    }
+
+As they complete, we see tasks moving from "queued" to "pending", and completed
+tasks disappear:
+
+    task completed; queue state:
+    {
+        "nextid": 4,
+        "worker_name": "anon",
+        "npending": 1,
+        "pending": {
+            "3": {
+                "id": 3,
+                "task": "/tmp/file3"
+            }
+        },
+        "queued": [
+            {
+                "id": 4,
+                "task": "/tmp/file4"
+            }
+        ],
+        "concurrency": 2
+    }
+
+When all tasks have completed, the queue state looks like it started:
+
+    task completed; queue state:
+    {
+        "nextid": 4,
+        "worker_name": "anon",
+        "npending": 0,
+        "pending": {},
+        "queued": [],
+        "concurrency": 2
+    }
+
+
+### Example 2: A simple serializer
+
+You can use a queue with concurrency 1 and where the tasks are themselves
+functions to ensure that an arbitrary asynchronous function never runs
+concurrently with another one, no matter what each one does.  Since the tasks
+are the actual functions to be invoked, the worker function just invokes each
+one:
+
+    var mod_vasync = require('../lib/vasync');
+    
+    var queue = mod_vasync.queue(
+        function (task, callback) { task(callback); }, 1);
+    
+    queue.push(function (callback) {
+    	console.log('first task begins');
+    	setTimeout(function () {
+    		console.log('first task ends');
+    		callback();
+    	}, 500);
+    });
+    
+    queue.push(function (callback) {
+    	console.log('second task begins');
+    	process.nextTick(function () {
+    		console.log('second task ends');
+    		callback();
+    	});
+    });
+
+This example outputs:
+
+    $ node examples/queue-serializer.js 
+    first task begins
+    first task ends
+    second task begins
+    second task ends
