@@ -27,7 +27,7 @@ the state of an ongoing asynchronous operation.  For example, you could see how
 far into a pipeline some particular operation is.
 
 
-## parallel(args, callback): invoke N functions in parallel and merge the results
+### parallel(args, callback): invoke N functions in parallel and merge the results
 
 This function takes a list of input functions (specified by the "funcs" property
 of "args") and runs them all.  These input functions are expected to be
@@ -154,7 +154,7 @@ You can use this if you want to handle all of the errors individually or to get
 at all of the individual return values.
 
 
-## forEachParallel(args, callback): invoke the same function on N inputs in parallel
+### forEachParallel(args, callback): invoke the same function on N inputs in parallel
 
 This function is exactly like `parallel`, except that the input is specified as
 a *single* function ("func") and a list of inputs ("inputs").  The function is
@@ -171,7 +171,7 @@ This example is exactly equivalent to the one above:
     });
 
 
-## pipeline(args, callback): invoke N functions in series (and stop on failure)
+### pipeline(args, callback): invoke N functions in series (and stop on failure)
 
 The arguments for this function are:
 
@@ -258,8 +258,8 @@ and the complete result is:
       nerrors: 1 }
 
 
-## queue(worker, concurrency): fixed-size worker queue
-## queuev(args)
+### queue(worker, concurrency): fixed-size worker queue
+### queuev(args)
 
 This function returns an object that allows up to a fixed number of tasks to be
 dispatched at any given time.  The interface is compatible with that provided
