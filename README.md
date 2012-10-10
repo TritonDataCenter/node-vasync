@@ -153,6 +153,11 @@ errors and return values:
 You can use this if you want to handle all of the errors individually or to get
 at all of the individual return values.
 
+Note that "successes" is provided as a convenience and the order of items in
+that array may not correspond to the order of the inputs.  To consume output in
+an ordered manner, you should iterate over "operations" and pick out the result
+from each item.
+
 
 ### forEachParallel(args, callback): invoke the same function on N inputs in parallel
 
