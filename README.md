@@ -2,8 +2,29 @@
 
 This module provides facilities for asynchronous control flow.  There are many
 modules that do this already (notably async.js).  This one's claim to fame is
-aided debuggability: each of the contained functions return a "status" object
-with the following fields:
+aided debuggability.
+
+
+## Observability is important
+
+Working with Node's asynchronous, callback-based model is much easier with a
+handful of simple control-flow abstractions, like pipelines (which invoke a list
+of asynchronous callbacks sequentially) and parallel pipelines (which invoke a
+list of asynchronous callbacks in parallel and invoke a top-level callback when
+the last one completes).  But these structures also introduce new types of
+programming errors: failing to invoke the "advance" callback can cause the
+program to hang, and inadvertently invoking it twice can cause subsequent
+operations to proceed before they should.  Both of these can be really nasty to
+debug after the fact because there's usually no trace of what happened.  And
+while tools like "pstack" or "gdb" help alleviate analogous problems in threaded
+environments, they're useless for Node because what's blocking the program isn't
+generally on the stack.
+
+This module implements abstractions for asynchronous control flow that keep
+track of what's going on so that you can figure out what happened when your
+program goes wrong.  The "pipeline" and "parallel" functions here both take a
+list of asynchronous functions (to be invoked in sequence or parallel,
+respectively), and both return a status object with several fields:
 
     operations          array corresponding to the input functions, with
 
@@ -15,17 +36,37 @@ with the following fields:
 
             result          returned "result" value, if any
 
-    successes		"result" field for each of "operations" where
-    			"status" == "ok"
+    successes           "result" field for each of "operations" where
+                        "status" == "ok" (in no particular order)
 
     ndone               number of input operations that have completed
 
     nerrors             number of input operations that have failed
 
-You can use this from a debugger (or your own monitoring code) to understand
-the state of an ongoing asynchronous operation.  For example, you could see how
-far into a pipeline some particular operation is.
+As long as you keep a reference to this returned object, then when your program
+does something wrong (e.g., hangs or invokes a second stage before it should
+have), you have several ways of getting at the status:
 
+* On illumos-based systems, use MDB to [find the status object](http://dtrace.org/blogs/bmc/2012/05/05/debugging-node-js-memory-leaks/)
+  and then [print it out](http://dtrace.org/blogs/dap/2012/01/13/playing-with-nodev8-postmortem-debugging/).
+* Provide an HTTP API (or AMQP, or whatever) that returns these pending status
+  objects as JSON (see [kang](https://github.com/davepacheco/kang)).
+* Incorporate a REPL into your program and print out the status object.
+* Use the Node debugger to print out the status object.
+
+Once you get the status object using any of these methods, you can see exactly
+which functions have completed, what they returned, and which ones are
+outstanding.
+
+## Facilities
+
+This module implements the following utilities:
+
+* `parallel(args, callback)`: invoke N functions in parallel (and merge the
+  results)
+* `forEachParallel(args, callback)`: invoke the same function on N inputs in parallel
+* `pipeline(args, callback)`: invoke N functions in series (and stop on failure)
+* `queuev(args)`: fixed-size worker queue
 
 ### parallel(args, callback): invoke N functions in parallel and merge the results
 
