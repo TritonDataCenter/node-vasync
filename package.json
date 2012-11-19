@@ -10,6 +10,7 @@
 	},
 
 	"dependencies": {
+		"jsprim": "0.3.0",
 		"verror": "1.1.0"
 	},
 

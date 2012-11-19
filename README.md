@@ -66,6 +66,7 @@ This module implements the following utilities:
   results)
 * `forEachParallel(args, callback)`: invoke the same function on N inputs in parallel
 * `pipeline(args, callback)`: invoke N functions in series (and stop on failure)
+* `barrier([args])`: coordinate multiple concurrent operations
 * `queuev(args)`: fixed-size worker queue
 
 ### parallel(args, callback): invoke N functions in parallel and merge the results
@@ -303,6 +304,78 @@ and the complete result is:
       ndone: 2,
       nerrors: 1 }
 
+### barrier([args]): coordinate multiple concurrent operations
+
+Returns a new barrier object.  Like `parallel`, barriers are useful for
+coordinating several concurrent operations, but instead of specifying a list of
+functions to invoke, you just say how many (and optionally which ones) are
+outstanding, and this object emits `'drain'` when they've all completed.  This
+is syntactically lighter-weight, and more flexible.
+
+* Methods:
+
+    * start(name): Indicates that the named operation began.  The name must not
+      match an operation which is already ongoing.
+    * done(name): Indicates that the named operation ended.
+
+
+* Read-only public properties (for debugging):
+
+    * pending: Set of pending operations.  Keys are names passed to "start", and
+      values are timestamps when the operation began.
+    * recent: Array of recent completed operations.  Each element is an object
+      with a "name", "start", and "done" field.  By default, 10 operations are
+      remembered.
+
+
+* Options:
+
+    * nrecent: number of recent operations to remember (for debugging)
+
+Example: printing sizes of files in a directory
+
+    var mod_fs = require('fs');
+    var mod_path = require('path');
+    var mod_vasync = require('../lib/vasync');
+
+    var barrier = mod_vasync.barrier();
+
+    barrier.on('drain', function () {
+    	console.log('all files checked');
+    });
+
+    barrier.start('readdir');
+
+    mod_fs.readdir(__dirname, function (err, files) {
+    	barrier.done('readdir');
+
+    	if (err)
+    		throw (err);
+
+    	files.forEach(function (file) {
+    		barrier.start('stat ' + file);
+
+    		var path = mod_path.join(__dirname, file);
+
+    		mod_fs.stat(path, function (err2, stat) {
+    			barrier.done('stat ' + file);
+    			console.log('%s: %d bytes', file, stat['size']);
+    		});
+    	});
+    });
+
+This emits:
+
+    barrier-readdir.js: 602 bytes
+    foreach-parallel.js: 358 bytes
+    barrier-basic.js: 552 bytes
+    nofail.js: 384 bytes
+    pipeline.js: 490 bytes
+    parallel.js: 481 bytes
+    queue-serializer.js: 441 bytes
+    queue-stat.js: 529 bytes
+    all files checked
+
 
 ### queue(worker, concurrency): fixed-size worker queue
 ### queuev(args)
@@ -312,36 +385,44 @@ dispatched at any given time.  The interface is compatible with that provided
 by the "async" Node library, except that the returned object's fields represent
 a public interface you can use to introspect what's going on.
 
-The arguments are:
+* Arguments
 
-* worker: a function invoked as `worker(task, callback)`, where `task` is a
-  task dispatched to this queue and `callback` should be invoked when the task
-  completes.
-* concurrency: a positive integer indicating the maximum number of tasks that
-  may be dispatched at any time.
+    * worker: a function invoked as `worker(task, callback)`, where `task` is a
+      task dispatched to this queue and `callback` should be invoked when the
+      task completes.
+    * concurrency: a positive integer indicating the maximum number of tasks
+      that may be dispatched at any time.  With concurrency = 1, the queue
+      serializes all operations.
 
-With concurrency = 1, the queue serializes all operations.
 
-The object provides the following method:
+* Methods
 
-* push(task, [callback]): add a task (or array of tasks) to the queue, with an
-  optional callback to be invoked when each task completes.  If a list of tasks
-  are added, the callback is invoked for each one.
+    * push(task, [callback]): add a task (or array of tasks) to the queue, with
+      an optional callback to be invoked when each task completes.  If a list of
+      tasks are added, the callback is invoked for each one.
+    * length(): for compatibility with node-async.
 
-The object also provides the length() method, the "concurrency" field, and
-hooks for "saturated", "empty", and "drain" for compatibility with node-async.
-In addition, several fields may be inspected to see what's currently going on
-with the queue, but **these fields must not be modified directly**:
 
-* worker: worker function, as passed into "queue"/"queuev"
-* worker_name: worker function's "name" field
-* npending: the number of tasks currently being processed
-* pending: an object (*not* an array) describing the tasks currently being processed
-* queued: array of tasks currently queued for processing
+* Read-only public properties (for debugging):
+
+    * concurrency: for compatibility with node-async
+    * worker: worker function, as passed into "queue"/"queuev"
+    * worker\_name: worker function's "name" field
+    * npending: the number of tasks currently being processed
+    * pending: an object (*not* an array) describing the tasks currently being
+      processed
+    * queued: array of tasks currently queued for processing
+
+
+* Hooks (for compatibility with node-async):
+
+    * saturated
+    * empty
+    * drain
 
 If the tasks are themselves simple objects, then the entire queue may be
 serialized (as via JSON.stringify) for debugging and monitoring tools.  Using
-the above fields, you can see what this queue is doing (worker_name), which
+the above fields, you can see what this queue is doing (worker\_name), which
 tasks are queued, which tasks are being processed, and so on.
 
 ### Example 1: Stat several files
@@ -350,24 +431,24 @@ Here's an example demonstrating the queue:
 
     var mod_fs = require('fs');
     var mod_vasync = require('../lib/vasync');
-    
+
     var queue;
-    
+
     function doneOne()
     {
     	console.log('task completed; queue state:\n%s\n',
     	    JSON.stringify(queue, null, 4));
     }
-    
+
     queue = mod_vasync.queue(mod_fs.stat, 2);
-    
+
     console.log('initial queue state:\n%s\n', JSON.stringify(queue, null, 4));
-    
+
     queue.push('/tmp/file1', doneOne);
     queue.push('/tmp/file2', doneOne);
     queue.push('/tmp/file3', doneOne);
     queue.push('/tmp/file4', doneOne);
-    
+
     console.log('all tasks dispatched:\n%s\n', JSON.stringify(queue, null, 4));
 
 The initial queue state looks like this:
@@ -458,10 +539,10 @@ are the actual functions to be invoked, the worker function just invokes each
 one:
 
     var mod_vasync = require('../lib/vasync');
-    
+
     var queue = mod_vasync.queue(
         function (task, callback) { task(callback); }, 1);
-    
+
     queue.push(function (callback) {
     	console.log('first task begins');
     	setTimeout(function () {
@@ -469,7 +550,7 @@ one:
     		callback();
     	}, 500);
     });
-    
+
     queue.push(function (callback) {
     	console.log('second task begins');
     	process.nextTick(function () {
