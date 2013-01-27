@@ -83,18 +83,16 @@ examining the object returned synchronously by this function.
 
 Example usage:
 
-    status = mod_vasync.parallel({
+    console.log(mod_vasync.parallel({
         'funcs': [
-             function f1 (callback) { mod_fs.stat('/tmp', callback); },
-             function f2 (callback) { mod_fs.stat('/noexist', callback); },
-             function f3 (callback) { mod_fs.stat('/var', callback); }
+    	function f1 (callback) { mod_dns.resolve('joyent.com', callback); },
+    	function f2 (callback) { mod_dns.resolve('github.com', callback); },
+    	function f3 (callback) { mod_dns.resolve('asdfaqsdfj.com', callback); }
         ]
     }, function (err, results) {
-            console.log('error: %s', err.message);
-            console.log('results: %s', mod_util.inspect(results, null, 3));
-    });
-
-    console.log('status: %s', mod_sys.inspect(status, null, 3));
+    	console.log('error: %s', err.message);
+    	console.log('results: %s', mod_util.inspect(results, null, 3));
+    }));
 
 In the first tick, this outputs:
 
@@ -109,7 +107,7 @@ In the first tick, this outputs:
 showing that there are three operations pending and none has yet been started.
 When the program finishes, it outputs this error:
 
-    error: first of 1 error: ENOENT, no such file or directory '/noexist'
+    error: first of 1 error: queryA ENOTFOUND
 
 which encapsulates all of the intermediate failures.  This model allows you to
 write the final callback like you normally would:
@@ -125,70 +123,22 @@ errors and return values:
 
     results: { operations: 
        [ { func: [Function: f1],
+           funcname: 'f1',
            status: 'ok',
            err: null,
-           result: 
-            { dev: 140247096,
-              ino: 879368309,
-              mode: 17407,
-              nlink: 9,
-              uid: 0,
-              gid: 3,
-              rdev: 0,
-              size: 754,
-              blksize: 4096,
-              blocks: 8,
-              atime: Thu, 12 Apr 2012 23:18:57 GMT,
-              mtime: Tue, 17 Apr 2012 23:56:34 GMT,
-              ctime: Tue, 17 Apr 2012 23:56:34 GMT } },
+           result: [ '165.225.132.33' ] },
          { func: [Function: f2],
-           status: 'fail',
-           err: { [Error: ENOENT, no such file or directory '/noexist'] errno: 34, code: 'ENOENT', path: '/noexist' },
-           result: undefined },
-         { func: [Function: f3],
+           funcname: 'f2',
            status: 'ok',
            err: null,
-           result: 
-            { dev: 23658528,
-              ino: 5,
-              mode: 16877,
-              nlink: 27,
-              uid: 0,
-              gid: 0,
-              rdev: -1,
-              size: 27,
-              blksize: 2560,
-              blocks: 3,
-              atime: Fri, 09 Sep 2011 14:28:55 GMT,
-              mtime: Wed, 04 Apr 2012 17:51:20 GMT,
-              ctime: Wed, 04 Apr 2012 17:51:20 GMT } } ],
-      successes: 
-       [ { dev: 234881026,
-           ino: 24965,
-           mode: 17407,
-           nlink: 8,
-           uid: 0,
-           gid: 0,
-           rdev: 0,
-           size: 272,
-           blksize: 4096,
-           blocks: 0,
-           atime: Tue, 01 May 2012 16:02:24 GMT,
-           mtime: Tue, 01 May 2012 19:10:35 GMT,
-           ctime: Tue, 01 May 2012 19:10:35 GMT },
-         { dev: 234881026,
-           ino: 216,
-           mode: 16877,
-           nlink: 26,
-           uid: 0,
-           gid: 0,
-           rdev: 0,
-           size: 884,
-           blksize: 4096,
-           blocks: 0,
-           atime: Tue, 01 May 2012 16:02:24 GMT,
-           mtime: Fri, 14 Aug 2009 21:23:03 GMT,
-           ctime: Thu, 28 Oct 2010 21:51:39 GMT } ],
+           result: [ '207.97.227.239' ] },
+         { func: [Function: f3],
+           funcname: 'f3',
+           status: 'fail',
+           err: { [Error: queryA ENOTFOUND] code: 'ENOTFOUND',
+              errno: 'ENOTFOUND', syscall: 'queryA' },
+           result: undefined } ],
+      successes: [ [ '165.225.132.33' ], [ '207.97.227.239' ] ],
       ndone: 3,
       nerrors: 1 }
 
@@ -209,13 +159,13 @@ invoked on each input in parallel.
 
 This example is exactly equivalent to the one above:
 
-    mod_vasync.forEachParallel({
-        'func': mod_fs.stat,
-        'inputs': [ '/var', '/nonexistent', '/tmp' ]
+    console.log(mod_vasync.forEachParallel({
+        'func': mod_dns.resolve,
+        'inputs': [ 'joyent.com', 'github.com', 'asdfaqsdfj.com' ]
     }, function (err, results) {
         console.log('error: %s', err.message);
         console.log('results: %s', mod_util.inspect(results, null, 3));
-    });
+    }));
 
 
 ### pipeline(args, callback): invoke N functions in series (and stop on failure)
@@ -258,51 +208,8 @@ As a result, the status after the first tick looks like this:
       nerrors: 0 }
 
 (Note that the second and third stages are now "waiting", rather than "pending"
-in the `parallel` case.)  The error reported is:
-
-    error: ENOENT, no such file or directory '/noexist'
-
-and the complete result is:
-
-    results: { operations: 
-       [ { func: [Function: f1],
-           status: 'ok',
-           err: null,
-           result: 
-            { dev: 140247096,
-              ino: 879368309,
-              mode: 17407,
-              nlink: 9,
-              uid: 0,
-              gid: 3,
-              rdev: 0,
-              size: 754,
-              blksize: 4096,
-              blocks: 8,
-              atime: Thu, 12 Apr 2012 23:18:57 GMT,
-              mtime: Tue, 17 Apr 2012 23:56:34 GMT,
-              ctime: Tue, 17 Apr 2012 23:56:34 GMT } },
-         { func: [Function: f2],
-           status: 'fail',
-           err: { [Error: ENOENT, no such file or directory '/noexist'] errno: 34, code: 'ENOENT', path: '/noexist' },
-           result: undefined },
-         { func: [Function: f3], status: 'waiting' } ],
-      successes: 
-       [ { dev: 234881026,
-           ino: 24965,
-           mode: 17407,
-           nlink: 8,
-           uid: 0,
-           gid: 0,
-           rdev: 0,
-           size: 272,
-           blksize: 4096,
-           blocks: 0,
-           atime: Tue, 01 May 2012 16:02:24 GMT,
-           mtime: Tue, 01 May 2012 19:10:35 GMT,
-           ctime: Tue, 01 May 2012 19:10:35 GMT } ],
-      ndone: 2,
-      nerrors: 1 }
+in the `parallel` case.)  The error and complete result look just like the
+parallel case.
 
 ### barrier([args]): coordinate multiple concurrent operations
 
