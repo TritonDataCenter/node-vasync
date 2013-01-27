@@ -9,6 +9,12 @@
 #
 
 #
+# Tools must be installed on the path
+#
+JSL		 = jsl
+JSSTYLE		 = jsstyle
+
+#
 # Files
 #
 JS_FILES	:= $(shell find lib -name '*.js')
@@ -19,5 +25,4 @@ JSL_CONF_NODE	 = jsl.node.conf
 all:
 	npm install
 
-include ./Makefile.deps
 include ./Makefile.targ
