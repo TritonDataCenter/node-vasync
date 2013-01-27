@@ -8,44 +8,22 @@ aided debuggability.
 ## Observability is important
 
 Working with Node's asynchronous, callback-based model is much easier with a
-handful of simple control-flow abstractions, like pipelines (which invoke a list
-of asynchronous callbacks sequentially) and parallel pipelines (which invoke a
-list of asynchronous callbacks in parallel and invoke a top-level callback when
-the last one completes).  But these structures also introduce new types of
-programming errors: failing to invoke the "advance" callback can cause the
-program to hang, and inadvertently invoking it twice can cause subsequent
-operations to proceed before they should.  Both of these can be really nasty to
-debug after the fact because there's usually no trace of what happened.  And
-while tools like "pstack" or "gdb" help alleviate analogous problems in threaded
-environments, they're useless for Node because what's blocking the program isn't
-generally on the stack.
+handful of simple control-flow abstractions, like:
 
-This module implements abstractions for asynchronous control flow that keep
-track of what's going on so that you can figure out what happened when your
-program goes wrong.  The "pipeline" and "parallel" functions here both take a
-list of asynchronous functions (to be invoked in sequence or parallel,
-respectively), and both return a status object with several fields:
+* pipelines (which invoke a list of asynchronous callbacks sequentially)
+* parallel pipelines (which invoke a list of asynchronous callbacks in parallel
+  and invoke a top-level callback when the last one completes).
+* queues
+* barriers
 
-    operations          array corresponding to the input functions, with
+But these structures also introduce new types of programming errors: failing to
+invoke the callback can cause the program to hang, and inadvertently invoking it
+twice can cause all kinds of mayhem that's very difficult to debug.
 
-            func            input function
-
-            status          "pending", "ok", or "fail"
-
-            err             returned "err" value, if any
-
-            result          returned "result" value, if any
-
-    successes           "result" field for each of "operations" where
-                        "status" == "ok" (in no particular order)
-
-    ndone               number of input operations that have completed
-
-    nerrors             number of input operations that have failed
-
-As long as you keep a reference to this returned object, then when your program
-does something wrong (e.g., hangs or invokes a second stage before it should
-have), you have several ways of getting at the status:
+The facilities in this module keep track of what's going on so that you can
+figure out what happened when your program goes wrong.  They generally return an
+object describing details of the current state.  If your program goes wrong, you
+have several ways of getting at this state:
 
 * On illumos-based systems, use MDB to [find the status object](http://dtrace.org/blogs/bmc/2012/05/05/debugging-node-js-memory-leaks/)
   and then [print it out](http://dtrace.org/blogs/dap/2012/01/13/playing-with-nodev8-postmortem-debugging/).
@@ -53,10 +31,6 @@ have), you have several ways of getting at the status:
   objects as JSON (see [kang](https://github.com/davepacheco/kang)).
 * Incorporate a REPL into your program and print out the status object.
 * Use the Node debugger to print out the status object.
-
-Once you get the status object using any of these methods, you can see exactly
-which functions have completed, what they returned, and which ones are
-outstanding.
 
 ## Facilities
 
@@ -74,24 +48,39 @@ This module implements the following utilities:
 This function takes a list of input functions (specified by the "funcs" property
 of "args") and runs them all.  These input functions are expected to be
 asynchronous: they get a "callback" argument and should invoke it as
-callback(err, result).  The error and result will be saved and made available to
-the original caller when all of these functions complete.
+`callback(err, result)`.  The error and result will be saved and made available
+to the original caller when all of these functions complete.
+
+This function returns the same "result" object it passes to the callback, and
+you can use the fields in this object to debug or observe progress:
+
+* `operations`: array corresponding to the input functions, with
+    * `func`: input function,
+    * `status`: "pending", "ok", or "fail",
+    * `err`: returned "err" value, if any, and
+    * `result`: returned "result" value, if any
+* `successes`: "result" field for each of "operations" where
+  "status" == "ok" (in no particular order)
+* `ndone`: number of input operations that have completed
+* `nerrors`: number of input operations that have failed
+
+This status object lets you see in a debugger exactly which functions have
+completed, what they returned, and which ones are outstanding.
 
 All errors are combined into a single "err" parameter to the final callback (see
-below).  You can also observe the progress of the operation as it goes by
-examining the object returned synchronously by this function.
+below).
 
 Example usage:
 
     console.log(mod_vasync.parallel({
         'funcs': [
-    	function f1 (callback) { mod_dns.resolve('joyent.com', callback); },
-    	function f2 (callback) { mod_dns.resolve('github.com', callback); },
-    	function f3 (callback) { mod_dns.resolve('asdfaqsdfj.com', callback); }
+            function f1 (callback) { mod_dns.resolve('joyent.com', callback); },
+            function f2 (callback) { mod_dns.resolve('github.com', callback); },
+            function f3 (callback) { mod_dns.resolve('asdfaqsdfj.com', callback); }
         ]
     }, function (err, results) {
-    	console.log('error: %s', err.message);
-    	console.log('results: %s', mod_util.inspect(results, null, 3));
+            console.log('error: %s', err.message);
+            console.log('results: %s', mod_util.inspect(results, null, 3));
     }));
 
 In the first tick, this outputs:
@@ -170,10 +159,10 @@ This example is exactly equivalent to the one above:
 
 ### pipeline(args, callback): invoke N functions in series (and stop on failure)
 
-The arguments for this function are:
+The named arguments (that go inside `args`) are:
 
-* funcs: input functions, to be invoked in series
-* arg: arbitrary argument that will be passed to each function
+* `funcs`: input functions, to be invoked in series
+* `arg`: arbitrary argument that will be passed to each function
 
 The functions are invoked in order as `func(arg, callback)`, where "arg" is the
 user-supplied argument from "args" and "callback" should be invoked in the usual
@@ -207,8 +196,8 @@ As a result, the status after the first tick looks like this:
       ndone: 0,
       nerrors: 0 }
 
-(Note that the second and third stages are now "waiting", rather than "pending"
-in the `parallel` case.)  The error and complete result look just like the
+Note that the second and third stages are now "waiting", rather than "pending"
+in the `parallel` case.  The error and complete result look just like the
 parallel case.
 
 ### barrier([args]): coordinate multiple concurrent operations
