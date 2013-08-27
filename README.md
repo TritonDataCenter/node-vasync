@@ -40,6 +40,7 @@ This module implements the following utilities:
   results)
 * `forEachParallel(args, callback)`: invoke the same function on N inputs in parallel
 * `pipeline(args, callback)`: invoke N functions in series (and stop on failure)
+* `forEachPipeline(args, callback)`: invoke the same function on N inputs in series (and stop on failure)
 * `barrier([args])`: coordinate multiple concurrent operations
 * `queuev(args)`: fixed-size worker queue
 
@@ -199,6 +200,24 @@ As a result, the status after the first tick looks like this:
 Note that the second and third stages are now "waiting", rather than "pending"
 in the `parallel` case.  The error and complete result look just like the
 parallel case.
+
+
+### forEachPipeline(args, callback): invoke the same function on N inputs in series (and stop on failure)
+
+This function is exactly like `pipeline`, except that the input is specified as
+a *single* function ("func") and a list of inputs ("inputs").  The function is
+invoked on each input in series.
+
+This example is exactly equivalent to the one above:
+
+    console.log(mod_vasync.forEachPipeline({
+        'func': mod_dns.resolve,
+        'inputs': [ 'joyent.com', 'github.com', 'asdfaqsdfj.com' ]
+    }, function (err, results) {
+        console.log('error: %s', err.message);
+        console.log('results: %s', mod_util.inspect(results, null, 3));
+    }));
+
 
 ### barrier([args]): coordinate multiple concurrent operations
 
