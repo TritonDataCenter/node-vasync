@@ -73,26 +73,31 @@ below).
 
 Example usage:
 
-    console.log(mod_vasync.parallel({
-        'funcs': [
-            function f1 (callback) { mod_dns.resolve('joyent.com', callback); },
-            function f2 (callback) { mod_dns.resolve('github.com', callback); },
-            function f3 (callback) { mod_dns.resolve('asdfaqsdfj.com', callback); }
-        ]
-    }, function (err, results) {
-            console.log('error: %s', err.message);
-            console.log('results: %s', mod_util.inspect(results, null, 3));
-    }));
+```js
+console.log(mod_vasync.parallel({
+    'funcs': [
+        function f1 (callback) { mod_dns.resolve('joyent.com', callback); },
+        function f2 (callback) { mod_dns.resolve('github.com', callback); },
+        function f3 (callback) { mod_dns.resolve('asdfaqsdfj.com', callback); }
+    ]
+}, function (err, results) {
+        console.log('error: %s', err.message);
+        console.log('results: %s', mod_util.inspect(results, null, 3));
+}));
+```
 
 In the first tick, this outputs:
 
-    status: { operations: 
-       [ { func: [Function: f1], status: 'pending' },
-         { func: [Function: f2], status: 'pending' },
-         { func: [Function: f3], status: 'pending' } ],
-      successes: [],
-      ndone: 0,
-      nerrors: 0 }
+```js
+// status:
+{ operations: 
+   [ { func: [Function: f1], status: 'pending' },
+     { func: [Function: f2], status: 'pending' },
+     { func: [Function: f3], status: 'pending' } ],
+  successes: [],
+  ndone: 0,
+  nerrors: 0 }
+```
 
 showing that there are three operations pending and none has yet been started.
 When the program finishes, it outputs this error:
@@ -102,8 +107,10 @@ When the program finishes, it outputs this error:
 which encapsulates all of the intermediate failures.  This model allows you to
 write the final callback like you normally would:
 
-    if (err)
-            return (callback(err));
+```js
+if (err)
+  return (callback(err));
+```
 
 and still propagate useful information to callers that don't deal with multiple
 errors (i.e. most callers).
@@ -111,26 +118,29 @@ errors (i.e. most callers).
 The example also prints out the detailed final status, including all of the
 errors and return values:
 
-    results: { operations: 
-       [ { func: [Function: f1],
-           funcname: 'f1',
-           status: 'ok',
-           err: null,
-           result: [ '165.225.132.33' ] },
-         { func: [Function: f2],
-           funcname: 'f2',
-           status: 'ok',
-           err: null,
-           result: [ '207.97.227.239' ] },
-         { func: [Function: f3],
-           funcname: 'f3',
-           status: 'fail',
-           err: { [Error: queryA ENOTFOUND] code: 'ENOTFOUND',
-              errno: 'ENOTFOUND', syscall: 'queryA' },
-           result: undefined } ],
-      successes: [ [ '165.225.132.33' ], [ '207.97.227.239' ] ],
-      ndone: 3,
-      nerrors: 1 }
+```js
+// results: 
+{ operations: 
+   [ { func: [Function: f1],
+       funcname: 'f1',
+       status: 'ok',
+       err: null,
+       result: [ '165.225.132.33' ] },
+     { func: [Function: f2],
+       funcname: 'f2',
+       status: 'ok',
+       err: null,
+       result: [ '207.97.227.239' ] },
+     { func: [Function: f3],
+       funcname: 'f3',
+       status: 'fail',
+       err: { [Error: queryA ENOTFOUND] code: 'ENOTFOUND',
+          errno: 'ENOTFOUND', syscall: 'queryA' },
+       result: undefined } ],
+  successes: [ [ '165.225.132.33' ], [ '207.97.227.239' ] ],
+  ndone: 3,
+  nerrors: 1 }
+```
 
 You can use this if you want to handle all of the errors individually or to get
 at all of the individual return values.
@@ -149,14 +159,15 @@ invoked on each input in parallel.
 
 This example is exactly equivalent to the one above:
 
-    console.log(mod_vasync.forEachParallel({
-        'func': mod_dns.resolve,
-        'inputs': [ 'joyent.com', 'github.com', 'asdfaqsdfj.com' ]
-    }, function (err, results) {
-        console.log('error: %s', err.message);
-        console.log('results: %s', mod_util.inspect(results, null, 3));
-    }));
-
+```js
+console.log(mod_vasync.forEachParallel({
+    'func': mod_dns.resolve,
+    'inputs': [ 'joyent.com', 'github.com', 'asdfaqsdfj.com' ]
+}, function (err, results) {
+    console.log('error: %s', err.message);
+    console.log('results: %s', mod_util.inspect(results, null, 3));
+}));
+```
 
 ### pipeline(args, callback): invoke N functions in series (and stop on failure)
 
@@ -176,26 +187,30 @@ returned by whatever pipeline function failed (if any).
 This example is similar to the one above, except that it runs the steps in
 sequence and stops early because `pipeline` stops on the first error:
 
-    console.log(mod_vasync.pipeline({
-        'funcs': [
-            function f1 (_, callback) { mod_fs.stat('/tmp', callback); },
-            function f2 (_, callback) { mod_fs.stat('/noexist', callback); },
-            function f3 (_, callback) { mod_fs.stat('/var', callback); }
-        ]
-    }, function (err, results) {
-            console.log('error: %s', err.message);
-            console.log('results: %s', mod_util.inspect(results, null, 3));
-    }));
+```js
+console.log(mod_vasync.pipeline({
+    'funcs': [
+        function f1 (_, callback) { mod_fs.stat('/tmp', callback); },
+        function f2 (_, callback) { mod_fs.stat('/noexist', callback); },
+        function f3 (_, callback) { mod_fs.stat('/var', callback); }
+    ]
+}, function (err, results) {
+        console.log('error: %s', err.message);
+        console.log('results: %s', mod_util.inspect(results, null, 3));
+}));
+```
 
 As a result, the status after the first tick looks like this:
 
-    { operations: 
-       [ { func: [Function: f1], status: 'pending' },
-         { func: [Function: f2], status: 'waiting' },
-         { func: [Function: f3], status: 'waiting' } ],
-      successes: [],
-      ndone: 0,
-      nerrors: 0 }
+```js
+{ operations: 
+   [ { func: [Function: f1], status: 'pending' },
+     { func: [Function: f2], status: 'waiting' },
+     { func: [Function: f3], status: 'waiting' } ],
+  successes: [],
+  ndone: 0,
+  nerrors: 0 }
+```
 
 Note that the second and third stages are now "waiting", rather than "pending"
 in the `parallel` case.  The error and complete result look just like the
@@ -210,14 +225,15 @@ invoked on each input in series.
 
 This example is exactly equivalent to the one above:
 
-    console.log(mod_vasync.forEachPipeline({
-        'func': mod_dns.resolve,
-        'inputs': [ 'joyent.com', 'github.com', 'asdfaqsdfj.com' ]
-    }, function (err, results) {
-        console.log('error: %s', err.message);
-        console.log('results: %s', mod_util.inspect(results, null, 3));
-    }));
-
+```js
+console.log(mod_vasync.forEachPipeline({
+    'func': mod_dns.resolve,
+    'inputs': [ 'joyent.com', 'github.com', 'asdfaqsdfj.com' ]
+}, function (err, results) {
+    console.log('error: %s', err.message);
+    console.log('results: %s', mod_util.inspect(results, null, 3));
+}));
+```
 
 ### barrier([args]): coordinate multiple concurrent operations
 
@@ -249,35 +265,37 @@ is syntactically lighter-weight, and more flexible.
 
 Example: printing sizes of files in a directory
 
-    var mod_fs = require('fs');
-    var mod_path = require('path');
-    var mod_vasync = require('../lib/vasync');
+```js
+var mod_fs = require('fs');
+var mod_path = require('path');
+var mod_vasync = require('../lib/vasync');
 
-    var barrier = mod_vasync.barrier();
+var barrier = mod_vasync.barrier();
 
-    barrier.on('drain', function () {
-    	console.log('all files checked');
+barrier.on('drain', function () {
+  console.log('all files checked');
+});
+
+barrier.start('readdir');
+
+mod_fs.readdir(__dirname, function (err, files) {
+  barrier.done('readdir');
+
+  if (err)
+    throw (err);
+
+  files.forEach(function (file) {
+    barrier.start('stat ' + file);
+
+    var path = mod_path.join(__dirname, file);
+
+    mod_fs.stat(path, function (err2, stat) {
+      barrier.done('stat ' + file);
+      console.log('%s: %d bytes', file, stat['size']);
     });
-
-    barrier.start('readdir');
-
-    mod_fs.readdir(__dirname, function (err, files) {
-    	barrier.done('readdir');
-
-    	if (err)
-    		throw (err);
-
-    	files.forEach(function (file) {
-    		barrier.start('stat ' + file);
-
-    		var path = mod_path.join(__dirname, file);
-
-    		mod_fs.stat(path, function (err2, stat) {
-    			barrier.done('stat ' + file);
-    			console.log('%s: %d bytes', file, stat['size']);
-    		});
-    	});
-    });
+  });
+});
+```
 
 This emits:
 
@@ -344,105 +362,114 @@ tasks are queued, which tasks are being processed, and so on.
 
 Here's an example demonstrating the queue:
 
-    var mod_fs = require('fs');
-    var mod_vasync = require('../lib/vasync');
+```js
+var mod_fs = require('fs');
+var mod_vasync = require('../lib/vasync');
 
-    var queue;
+var queue;
 
-    function doneOne()
-    {
-    	console.log('task completed; queue state:\n%s\n',
-    	    JSON.stringify(queue, null, 4));
-    }
+function doneOne()
+{
+  console.log('task completed; queue state:\n%s\n',
+      JSON.stringify(queue, null, 4));
+}
 
-    queue = mod_vasync.queue(mod_fs.stat, 2);
+queue = mod_vasync.queue(mod_fs.stat, 2);
 
-    console.log('initial queue state:\n%s\n', JSON.stringify(queue, null, 4));
+console.log('initial queue state:\n%s\n', JSON.stringify(queue, null, 4));
 
-    queue.push('/tmp/file1', doneOne);
-    queue.push('/tmp/file2', doneOne);
-    queue.push('/tmp/file3', doneOne);
-    queue.push('/tmp/file4', doneOne);
+queue.push('/tmp/file1', doneOne);
+queue.push('/tmp/file2', doneOne);
+queue.push('/tmp/file3', doneOne);
+queue.push('/tmp/file4', doneOne);
 
-    console.log('all tasks dispatched:\n%s\n', JSON.stringify(queue, null, 4));
+console.log('all tasks dispatched:\n%s\n', JSON.stringify(queue, null, 4));
+```
 
 The initial queue state looks like this:
 
-    initial queue state: 
-    {
-        "nextid": 0,
-        "worker_name": "anon",
-        "npending": 0,
-        "pending": {},
-        "queued": [],
-        "concurrency": 2
-    }
-
+```js
+// initial queue state: 
+{
+    "nextid": 0,
+    "worker_name": "anon",
+    "npending": 0,
+    "pending": {},
+    "queued": [],
+    "concurrency": 2
+}
+```
 After four tasks have been pushed, we see that two of them have been dispatched
 and the remaining two are queued up:
 
-    all tasks pushed:
-    {
-        "nextid": 4,
-        "worker_name": "anon",
-        "npending": 2,
-        "pending": {
-            "1": {
-                "id": 1,
-                "task": "/tmp/file1"
-            },
-            "2": {
-                "id": 2,
-                "task": "/tmp/file2"
-            }
+```js
+// all tasks pushed:
+{
+    "nextid": 4,
+    "worker_name": "anon",
+    "npending": 2,
+    "pending": {
+        "1": {
+            "id": 1,
+            "task": "/tmp/file1"
         },
-        "queued": [
-            {
-                "id": 3,
-                "task": "/tmp/file3"
-            },
-            {
-                "id": 4,
-                "task": "/tmp/file4"
-            }
-        ],
-        "concurrency": 2
-    }
+        "2": {
+            "id": 2,
+            "task": "/tmp/file2"
+        }
+    },
+    "queued": [
+        {
+            "id": 3,
+            "task": "/tmp/file3"
+        },
+        {
+            "id": 4,
+            "task": "/tmp/file4"
+        }
+    ],
+    "concurrency": 2
+}
+```
 
 As they complete, we see tasks moving from "queued" to "pending", and completed
 tasks disappear:
 
-    task completed; queue state:
-    {
-        "nextid": 4,
-        "worker_name": "anon",
-        "npending": 1,
-        "pending": {
-            "3": {
-                "id": 3,
-                "task": "/tmp/file3"
-            }
-        },
-        "queued": [
-            {
-                "id": 4,
-                "task": "/tmp/file4"
-            }
-        ],
-        "concurrency": 2
-    }
+```js
+// task completed; queue state:
+{
+    "nextid": 4,
+    "worker_name": "anon",
+    "npending": 1,
+    "pending": {
+        "3": {
+            "id": 3,
+            "task": "/tmp/file3"
+        }
+    },
+    "queued": [
+        {
+            "id": 4,
+            "task": "/tmp/file4"
+        }
+    ],
+    "concurrency": 2
+}
+```
 
 When all tasks have completed, the queue state looks like it started:
 
-    task completed; queue state:
-    {
-        "nextid": 4,
-        "worker_name": "anon",
-        "npending": 0,
-        "pending": {},
-        "queued": [],
-        "concurrency": 2
-    }
+```js
+// task completed; queue state:
+{
+    "nextid": 4,
+    "worker_name": "anon",
+    "npending": 0,
+    "pending": {},
+    "queued": [],
+    "concurrency": 2
+}
+```
 
 
 ### Example 2: A simple serializer
@@ -453,26 +480,28 @@ concurrently with another one, no matter what each one does.  Since the tasks
 are the actual functions to be invoked, the worker function just invokes each
 one:
 
-    var mod_vasync = require('../lib/vasync');
+```js
+var mod_vasync = require('../lib/vasync');
 
-    var queue = mod_vasync.queue(
-        function (task, callback) { task(callback); }, 1);
+var queue = mod_vasync.queue(
+    function (task, callback) { task(callback); }, 1);
 
-    queue.push(function (callback) {
-    	console.log('first task begins');
-    	setTimeout(function () {
-    		console.log('first task ends');
-    		callback();
-    	}, 500);
-    });
+queue.push(function (callback) {
+  console.log('first task begins');
+  setTimeout(function () {
+    console.log('first task ends');
+    callback();
+  }, 500);
+});
 
-    queue.push(function (callback) {
-    	console.log('second task begins');
-    	process.nextTick(function () {
-    		console.log('second task ends');
-    		callback();
-    	});
-    });
+queue.push(function (callback) {
+  console.log('second task begins');
+  process.nextTick(function () {
+    console.log('second task ends');
+    callback();
+  });
+});
+```
 
 This example outputs:
 
@@ -481,3 +510,5 @@ This example outputs:
     first task ends
     second task begins
     second task ends
+
+
