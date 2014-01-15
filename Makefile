@@ -25,4 +25,7 @@ JSL_CONF_NODE	 = jsl.node.conf
 all:
 	npm install
 
+test:
+	npm test
+
 include ./Makefile.targ

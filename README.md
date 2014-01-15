@@ -332,6 +332,11 @@ a public interface you can use to introspect what's going on.
       an optional callback to be invoked when each task completes.  If a list of
       tasks are added, the callback is invoked for each one.
     * length(): for compatibility with node-async.
+    * close(): signal that no more tasks will be enqueued.  Further attempts to
+      enqueue tasks to this queue will throw.  Once all pending and queued
+      tasks are completed the object will emit the "end" event.  The "end"
+      event is the last event the queue will emit, and it will be emitted even
+      if no tasks were ever enqueued.
 
 
 * Read-only public properties (for debugging):
@@ -343,6 +348,9 @@ a public interface you can use to introspect what's going on.
     * pending: an object (*not* an array) describing the tasks currently being
       processed
     * queued: array of tasks currently queued for processing
+    * closed: true when close() has been called on the queue
+    * ended: true when all tasks have completed processing, and no more
+      processing will occur
 
 
 * Hooks (for compatibility with node-async):

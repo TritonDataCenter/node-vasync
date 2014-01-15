@@ -7,6 +7,12 @@
 		"type": "git",
 		"url": "git://github.com/davepacheco/node-vasync.git"
 	},
+	"scripts": {
+		"test": "./node_modules/.bin/tap tests/"
+	},
+	"devDependencies": {
+		"tap": "~0.4.8"
+	},
 	"dependencies": {
 		"jsprim": "0.3.0",
 		"verror": "1.1.0"
