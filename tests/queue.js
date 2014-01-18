@@ -149,8 +149,8 @@ mod_tap.test('get \'end\' event with close() and no tasks', function (test) {
 	});
 	q.on('end', function () {
 		/*
-		 * We do not expect to see a 'drain' event, as there were no tasks
-		 * pushed onto the queue before we closed it.
+		 * We do not expect to see a 'drain' event, as there were no
+		 * tasks pushed onto the queue before we closed it.
 		 */
 		test.notOk(seen_drain);
 		test.notOk(seen_end);
