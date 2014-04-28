@@ -2,7 +2,7 @@
 
 This module provides facilities for asynchronous control flow.  There are many
 modules that do this already (notably async.js).  This one's claim to fame is
-aided debuggability.
+improved debuggability.
 
 
 ## Observability is important
@@ -10,7 +10,8 @@ aided debuggability.
 Working with Node's asynchronous, callback-based model is much easier with a
 handful of simple control-flow abstractions, like:
 
-* pipelines (which invoke a list of asynchronous callbacks sequentially)
+* waterfalls and pipelines (which invoke a list of asynchronous callbacks
+  sequentially)
 * parallel pipelines (which invoke a list of asynchronous callbacks in parallel
   and invoke a top-level callback when the last one completes).
 * queues
@@ -40,6 +41,8 @@ This module implements the following utilities:
   results)
 * `forEachParallel(args, callback)`: invoke the same function on N inputs in parallel
 * `pipeline(args, callback)`: invoke N functions in series (and stop on failure)
+* `waterfall(funcs, callback)`: like pipeline, but propagating results between
+  stages
 * `forEachPipeline(args, callback)`: invoke the same function on N inputs in series (and stop on failure)
 * `barrier([args])`: coordinate multiple concurrent operations
 * `queuev(args)`: fixed-size worker queue
@@ -231,6 +234,50 @@ console.log(mod_vasync.forEachPipeline({
     console.log('error: %s', err.message);
     console.log('results: %s', mod_util.inspect(results, null, 3));
 }));
+```
+
+### waterfall(funcs, callback): invoke N functions in series, stop on failure, and propagate results
+
+This function works like `pipeline` except for argument passing.
+
+Each function is passed any values emitted by the previous function (none for
+the first function), followed by the callback to invoke upon completion.  This
+callback must be invoked exactly once, regardless of success or failure.  As
+conventional in Node, the first argument to the callback indicates an error (if
+non-null).  Subsequent arguments are passed to the next function in the "funcs"
+chain.
+
+If any function fails (i.e., calls its callback with an Error), then the
+remaining functions are not invoked and "callback" is invoked with the error.
+
+The only difference between waterfall() and pipeline() are the arguments passed
+to each function in the chain.  pipeline() always passes the same argument
+followed by the callback, while waterfall() passes whatever values were emitted
+by the previous function followed by the callback.
+
+Here's an example:
+
+```js
+mod_vasync.waterfall([
+    function func1(callback) {
+ 	setImmediate(function () {
+		callback(null, 37);
+	});
+    },
+    function func2(extra, callback) {
+	console.log('func2 got "%s" from func1', extra);
+	callback();
+    }
+], function () {
+	console.log('done');
+});
+```
+
+This prints:
+
+```
+func2 got "37" from func1
+better stop early
 ```
 
 ### barrier([args]): coordinate multiple concurrent operations

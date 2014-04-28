@@ -13,7 +13,7 @@ latched_worker(task, cb)
 		task.unlatch = function () {
 			task.latched = false;
 			cb();
-		}
+		};
 	}
 }
 
@@ -167,7 +167,6 @@ mod_tap.test('test ratchet up and down', function (test) {
 	}
 	setTimeout(twoLatch, 10);
 
-	var drained = 0;
 	q.on('drain', function () {
 		q.close();
 	});
