@@ -14,7 +14,7 @@ mod_tap.test('empty waterfall', function (test) {
 		test.ok(st.ndone === 0);
 		test.ok(st.nerrors === 0);
 		test.ok(st.operations.length === 0);
-		test.ok(st.successes.length === 0)
+		test.ok(st.successes.length === 0);
 		test.equal(count, 1);
 		test.end();
 	});
@@ -22,7 +22,7 @@ mod_tap.test('empty waterfall', function (test) {
 	test.ok(st.ndone === 0);
 	test.ok(st.nerrors === 0);
 	test.ok(st.operations.length === 0);
-	test.ok(st.successes.length === 0)
+	test.ok(st.successes.length === 0);
 });
 
 mod_tap.test('normal 4-stage waterfall', function (test) {
@@ -67,7 +67,7 @@ mod_tap.test('normal 4-stage waterfall', function (test) {
 		test.ok(st.ndone === 4);
 		test.ok(st.nerrors === 0);
 		test.ok(st.operations.length === 4);
-		test.ok(st.successes.length === 4)
+		test.ok(st.successes.length === 4);
 		test.ok(st.operations[0].status == 'ok');
 		test.ok(st.operations[1].status == 'ok');
 		test.ok(st.operations[2].status == 'ok');
@@ -85,7 +85,7 @@ mod_tap.test('normal 4-stage waterfall', function (test) {
 	test.ok(st.operations[2].status == 'waiting');
 	test.ok(st.operations[3].funcname == 'func4', 'func4 name');
 	test.ok(st.operations[3].status == 'waiting');
-	test.ok(st.successes.length === 0)
+	test.ok(st.successes.length === 0);
 });
 
 mod_tap.test('bailing out early', function (test) {
@@ -101,7 +101,7 @@ mod_tap.test('bailing out early', function (test) {
 			count++;
 			setTimeout(cb, 20, new Error('boom!'));
 		},
-		function func2(cb) {
+		function func3(cb) {
 			test.ok(count == 2, 'func3: count == 2');
 			count++;
 			setTimeout(cb, 20);

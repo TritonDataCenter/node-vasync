@@ -8,10 +8,11 @@
 		"url": "git://github.com/davepacheco/node-vasync.git"
 	},
 	"scripts": {
-		"test": "./node_modules/.bin/tap tests/"
+		"test": "./node_modules/.bin/tap tests/ && ./node_modules/.bin/nodeunit tests/compat.js"
 	},
 	"devDependencies": {
-		"tap": "~0.4.8"
+		"tap": "~0.4.8",
+		"nodeunit": "0.8.7"
 	},
 	"dependencies": {
 		"jsprim": "0.3.0",
