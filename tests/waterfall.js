@@ -57,11 +57,13 @@ mod_tap.test('normal 4-stage waterfall', function (test) {
 			test.ok(count == 3, 'func4: count == 2');
 			test.ok(st.ndone === 3);
 			count++;
-			setTimeout(cb, 20);
+			setTimeout(cb, 20, null, 8, 9);
 		}
-	], function (err) {
+	], function (err, eight, nine) {
 		test.ok(count == 4, 'final: count == 4');
 		test.ok(err === null, 'no error');
+		test.ok(eight == 8);
+		test.ok(nine == 9);
 		test.ok(st.ndone === 4);
 		test.ok(st.nerrors === 0);
 		test.ok(st.operations.length === 4);
@@ -146,8 +148,32 @@ mod_tap.test('bad function', function (test) {
 
 mod_tap.test('badargs', function (test) {
 	test.throws(function () { mod_vasync.waterfall(); });
-	test.throws(function () { mod_vasync.waterfall([]); });
 	test.throws(function () { mod_vasync.waterfall([], 'foo'); });
 	test.throws(function () { mod_vasync.waterfall('foo', 'bar'); });
 	test.end();
+});
+
+mod_tap.test('normal waterfall, no callback', function (test) {
+	count = 0;
+	st = mod_vasync.waterfall([
+	    function func1(cb) {
+		test.ok(count === 0);
+		count++;
+		setImmediate(cb);
+	    },
+	    function func2(cb) {
+		test.ok(count == 1);
+		count++;
+		setImmediate(cb);
+		setTimeout(function () {
+			test.ok(count == 2);
+			test.end();
+		}, 100);
+	    }
+	]);
+});
+
+mod_tap.test('empty waterfall, no callback', function (test) {
+	st = mod_vasync.waterfall([]);
+	setTimeout(function () { test.end(); }, 100);
 });
