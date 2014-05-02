@@ -1,8 +1,8 @@
-# vasync: utilities for observable asynchronous control flow
+# vasync: observable asynchronous control flow
 
-This module provides facilities for asynchronous control flow.  There are many
-modules that do this already (notably async.js).  This one's claim to fame is
-improved debuggability.
+This module provides several functions for asynchronous control flow.  There are
+many modules that do this already (notably async.js).  This one's claim to fame
+is improved debuggability.
 
 
 ## Observability is important
@@ -21,7 +21,7 @@ But these structures also introduce new types of programming errors: failing to
 invoke the callback can cause the program to hang, and inadvertently invoking it
 twice can cause all kinds of mayhem that's very difficult to debug.
 
-The facilities in this module keep track of what's going on so that you can
+The functions in this module keep track of what's going on so that you can
 figure out what happened when your program goes wrong.  They generally return an
 object describing details of the current state.  If your program goes wrong, you
 have several ways of getting at this state:
@@ -33,21 +33,25 @@ have several ways of getting at this state:
 * Incorporate a REPL into your program and print out the status object.
 * Use the Node debugger to print out the status object.
 
-## Facilities
+## Functions
 
-This module implements the following utilities:
+* [parallel](#parallel-invoke-n-functions-in-parallel): invoke N functions in
+  parallel (and merge the results)
+* [forEachParallel](#foreachparallel-invoke-the-same-function-on-n-inputs-in-parallel):
+  invoke the same function on N inputs in parallel
+* [pipeline](#pipeline-invoke-n-functions-in-series-and-stop-on-failure): invoke
+  N functions in series (and stop on failure)
+* [forEachPipeline](#foreachpipeline-invoke-the-same-function-on-n-inputs-in-series-and-stop-on-failure):
+  invoke the same function on N inputs in series (and stop on failure)
+* [waterfall](#waterfall-invoke-n-functions-in-series-stop-on-failure-and-propagate-results):
+  like pipeline, but propagating results between stages
+* [barrier](#barrier-coordinate-multiple-concurrent-operations): coordinate
+  multiple concurrent operations
+* [queue/queuev](#queuequeuev-fixed-size-worker-queue): fixed-size worker queue
 
-* `parallel(args, callback)`: invoke N functions in parallel (and merge the
-  results)
-* `forEachParallel(args, callback)`: invoke the same function on N inputs in parallel
-* `pipeline(args, callback)`: invoke N functions in series (and stop on failure)
-* `waterfall(funcs, callback)`: like pipeline, but propagating results between
-  stages
-* `forEachPipeline(args, callback)`: invoke the same function on N inputs in series (and stop on failure)
-* `barrier([args])`: coordinate multiple concurrent operations
-* `queuev(args)`: fixed-size worker queue
+### parallel: invoke N functions in parallel
 
-### parallel(args, callback): invoke N functions in parallel and merge the results
+Synopsis: `parallel(args, callback)`
 
 This function takes a list of input functions (specified by the "funcs" property
 of "args") and runs them all.  These input functions are expected to be
@@ -152,7 +156,9 @@ an ordered manner, you should iterate over "operations" and pick out the result
 from each item.
 
 
-### forEachParallel(args, callback): invoke the same function on N inputs in parallel
+### forEachParallel: invoke the same function on N inputs in parallel
+
+Synopsis: `forEachParallel(args, callback)`
 
 This function is exactly like `parallel`, except that the input is specified as
 a *single* function ("func") and a list of inputs ("inputs").  The function is
@@ -170,7 +176,9 @@ console.log(mod_vasync.forEachParallel({
 }));
 ```
 
-### pipeline(args, callback): invoke N functions in series (and stop on failure)
+### pipeline: invoke N functions in series (and stop on failure)
+
+Synopsis: `pipeline(args, callback)`
 
 The named arguments (that go inside `args`) are:
 
@@ -218,7 +226,9 @@ in the `parallel` case.  The error and complete result look just like the
 parallel case.
 
 
-### forEachPipeline(args, callback): invoke the same function on N inputs in series (and stop on failure)
+### forEachPipeline: invoke the same function on N inputs in series (and stop on failure)
+
+Synopsis: `forEachPipeline(args, callback)`
 
 This function is exactly like `pipeline`, except that the input is specified as
 a *single* function ("func") and a list of inputs ("inputs").  The function is
@@ -236,7 +246,9 @@ console.log(mod_vasync.forEachPipeline({
 }));
 ```
 
-### waterfall(funcs, callback): invoke N functions in series, stop on failure, and propagate results
+### waterfall: invoke N functions in series, stop on failure, and propagate results
+
+Synopsis: `waterfall(funcs, callback)`
 
 This function works like `pipeline` except for argument passing.
 
@@ -280,7 +292,9 @@ func2 got "37" from func1
 better stop early
 ```
 
-### barrier([args]): coordinate multiple concurrent operations
+### barrier: coordinate multiple concurrent operations
+
+Synopsis: `barrier([args])`
 
 Returns a new barrier object.  Like `parallel`, barriers are useful for
 coordinating several concurrent operations, but instead of specifying a list of
@@ -355,8 +369,11 @@ This emits:
     all files checked
 
 
-### queue(worker, concurrency): fixed-size worker queue
-### queuev(args)
+### queue/queuev: fixed-size worker queue
+
+Synopsis: `queue(worker, concurrency)`
+
+Synopsis: `queuev(args)`
 
 This function returns an object that allows up to a fixed number of tasks to be
 dispatched at any given time.  The interface is compatible with that provided
@@ -405,6 +422,10 @@ a public interface you can use to introspect what's going on.
     * saturated
     * empty
     * drain
+
+* Events
+
+    * 'end': see close()
 
 If the tasks are themselves simple objects, then the entire queue may be
 serialized (as via JSON.stringify) for debugging and monitoring tools.  Using
