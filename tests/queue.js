@@ -253,3 +253,31 @@ mod_tap.test('ensure all arguments passed to push() callback', function (test) {
 		test.end();
 	};
 });
+
+mod_tap.test('queue kill', function (test) {
+	// Derived from async queue.kill test
+	var count = 0;
+	var q = mod_vasync.queuev({
+		worker: function (task, callback) {
+			setImmediate(function () {
+				test.ok(++count < 2, "Function should be called once");
+				callback();
+			});
+		},
+		concurrency: 1
+	});
+	q.drain = function () {
+		test.ok(false, "Function should never be called");
+	};
+
+	// Queue twice, the first will exec immediately
+	q.push(0);
+	q.push(0);
+
+	q.kill();
+
+	q.on('end', function () {
+		test.ok(q.killed);
+		test.end();
+	});
+});
