@@ -401,6 +401,8 @@ a public interface you can use to introspect what's going on.
       tasks are completed the object will emit the "end" event.  The "end"
       event is the last event the queue will emit, and it will be emitted even
       if no tasks were ever enqueued.
+    * kill(): clear enqueued tasks and implicitly close the queue.  To be
+      compatible with async, it will clear the drain handler.
 
 
 * Read-only public properties (for debugging):
