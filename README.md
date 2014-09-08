@@ -96,7 +96,7 @@ console.log(mod_vasync.parallel({
 In the first tick, this outputs:
 
 ```js
-status: { operations: 
+status: { operations:
    [ { func: [Function: f1], status: 'pending' },
      { func: [Function: f2], status: 'pending' },
      { func: [Function: f3], status: 'pending' } ],
@@ -125,7 +125,7 @@ The example also prints out the detailed final status, including all of the
 errors and return values:
 
 ```js
-results: { operations: 
+results: { operations:
    [ { func: [Function: f1],
        funcname: 'f1',
        status: 'ok',
@@ -212,7 +212,7 @@ console.log(mod_vasync.pipeline({
 As a result, the status after the first tick looks like this:
 
 ```js
-{ operations: 
+{ operations:
    [ { func: [Function: f1], status: 'pending' },
      { func: [Function: f2], status: 'waiting' },
      { func: [Function: f3], status: 'waiting' } ],
@@ -471,7 +471,7 @@ console.log('all tasks dispatched:\n%s\n', JSON.stringify(queue, null, 4));
 The initial queue state looks like this:
 
 ```js
-initial queue state: 
+initial queue state:
 {
     "nextid": 0,
     "worker_name": "anon",
@@ -587,7 +587,7 @@ queue.push(function (callback) {
 
 This example outputs:
 
-    $ node examples/queue-serializer.js 
+    $ node examples/queue-serializer.js
     first task begins
     first task ends
     second task begins
