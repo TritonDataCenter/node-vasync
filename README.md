@@ -401,8 +401,13 @@ a public interface you can use to introspect what's going on.
       tasks are completed the object will emit the "end" event.  The "end"
       event is the last event the queue will emit, and it will be emitted even
       if no tasks were ever enqueued.
-    * kill(): clear enqueued tasks and implicitly close the queue.  To be
-      compatible with async, it will clear the drain handler.
+    * kill(): clear enqueued tasks and implicitly close the queue.  Several
+      caveats apply when kill() is called:
+        * The completion callback will _not_ be called for items purged from
+          the queue.
+        * The drain handler is cleared (for node-async compatibility)
+        * Subsequent calls to kill() or close() are no-ops.
+        * As with close(), it is not legal to call push() after kill().
 
 
 * Read-only public properties (for debugging):
@@ -417,6 +422,7 @@ a public interface you can use to introspect what's going on.
     * closed: true when close() has been called on the queue
     * ended: true when all tasks have completed processing, and no more
       processing will occur
+    * killed: true when kill() has been called on the queue
 
 
 * Hooks (for compatibility with node-async):

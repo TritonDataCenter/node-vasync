@@ -277,6 +277,7 @@ mod_tap.test('queue kill', function (test) {
 	q.kill();
 
 	q.on('end', function () {
+		test.ok(q.killed);
 		test.end();
 	});
 });
