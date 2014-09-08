@@ -96,7 +96,7 @@ console.log(mod_vasync.parallel({
 In the first tick, this outputs:
 
 ```js
-status: { operations: 
+status: { operations:
    [ { func: [Function: f1], status: 'pending' },
      { func: [Function: f2], status: 'pending' },
      { func: [Function: f3], status: 'pending' } ],
@@ -125,7 +125,7 @@ The example also prints out the detailed final status, including all of the
 errors and return values:
 
 ```js
-results: { operations: 
+results: { operations:
    [ { func: [Function: f1],
        funcname: 'f1',
        status: 'ok',
@@ -212,7 +212,7 @@ console.log(mod_vasync.pipeline({
 As a result, the status after the first tick looks like this:
 
 ```js
-{ operations: 
+{ operations:
    [ { func: [Function: f1], status: 'pending' },
      { func: [Function: f2], status: 'waiting' },
      { func: [Function: f3], status: 'waiting' } ],
@@ -401,6 +401,13 @@ a public interface you can use to introspect what's going on.
       tasks are completed the object will emit the "end" event.  The "end"
       event is the last event the queue will emit, and it will be emitted even
       if no tasks were ever enqueued.
+    * kill(): clear enqueued tasks and implicitly close the queue.  Several
+      caveats apply when kill() is called:
+        * The completion callback will _not_ be called for items purged from
+          the queue.
+        * The drain handler is cleared (for node-async compatibility)
+        * Subsequent calls to kill() or close() are no-ops.
+        * As with close(), it is not legal to call push() after kill().
 
 
 * Read-only public properties (for debugging):
@@ -415,6 +422,7 @@ a public interface you can use to introspect what's going on.
     * closed: true when close() has been called on the queue
     * ended: true when all tasks have completed processing, and no more
       processing will occur
+    * killed: true when kill() has been called on the queue
 
 
 * Hooks (for compatibility with node-async):
@@ -463,7 +471,7 @@ console.log('all tasks dispatched:\n%s\n', JSON.stringify(queue, null, 4));
 The initial queue state looks like this:
 
 ```js
-initial queue state: 
+initial queue state:
 {
     "nextid": 0,
     "worker_name": "anon",
@@ -579,7 +587,7 @@ queue.push(function (callback) {
 
 This example outputs:
 
-    $ node examples/queue-serializer.js 
+    $ node examples/queue-serializer.js
     first task begins
     first task ends
     second task begins
