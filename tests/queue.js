@@ -260,14 +260,15 @@ mod_tap.test('queue kill', function (test) {
 	var q = mod_vasync.queuev({
 		worker: function (task, callback) {
 			setImmediate(function () {
-				test.ok(++count < 2, "Function should be called once");
+				test.ok(++count < 2,
+				    'Function should be called once');
 				callback();
 			});
 		},
 		concurrency: 1
 	});
 	q.drain = function () {
-		test.ok(false, "Function should never be called");
+		test.ok(false, 'Function should never be called');
 	};
 
 	// Queue twice, the first will exec immediately
