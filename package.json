@@ -1,6 +1,6 @@
 {
 	"name": "vasync",
-	"version": "1.6.1",
+	"version": "1.6.2",
 	"description": "utilities for observable asynchronous control flow",
 	"main": "./lib/vasync.js",
 	"repository": {
@@ -15,7 +15,6 @@
 		"nodeunit": "0.8.7"
 	},
 	"dependencies": {
-		"jsprim": "0.6.1",
 		"verror": "1.1.0"
 	},
 	"engines": [
