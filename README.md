@@ -59,6 +59,8 @@ asynchronous: they get a "callback" argument and should invoke it as
 `callback(err, result)`.  The error and result will be saved and made available
 to the original caller when all of these functions complete.
 
+If `args` is an array, it will be used as the `funcs` property for convenience.
+
 This function returns the same "result" object it passes to the callback, and
 you can use the fields in this object to debug or observe progress:
 
@@ -184,6 +186,8 @@ The named arguments (that go inside `args`) are:
 
 * `funcs`: input functions, to be invoked in series
 * `arg`: arbitrary argument that will be passed to each function
+
+If `args` is an array, it will be used as the `funcs` property for convenience.
 
 The functions are invoked in order as `func(arg, callback)`, where "arg" is the
 user-supplied argument from "args" and "callback" should be invoked in the usual
