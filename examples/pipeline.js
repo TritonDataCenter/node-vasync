@@ -11,5 +11,5 @@ console.log(mod_vasync.pipeline({
     ]
 }, function (err, results) {
 	console.log('error: %s', err.message);
-	console.log('results: %s', mod_util.inspect(results, null, 3));
+	console.log('results: %s', mod_util.inspect(results, null, 4));
 }));

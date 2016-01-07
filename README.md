@@ -184,17 +184,52 @@ The named arguments (that go inside `args`) are:
 
 * `funcs`: input functions, to be invoked in series
 * `arg`: arbitrary argument that will be passed to each function
+* [`trackTiming`]: optional boolean indicating that high-resolution timestamps
+  should be recorded at the start and end of each pipeline function.
 
 The functions are invoked in order as `func(arg, callback)`, where "arg" is the
 user-supplied argument from "args" and "callback" should be invoked in the usual
 way.  If any function emits an error, the whole pipeline stops.
 
 The return value and the arguments to the final callback are exactly the same as
-for `parallel`.  The error object for the final callback is just the error
-returned by whatever pipeline function failed (if any).
+for `parallel`, except that if `trackTiming` is `true`, then additional timing
+related properties are available (described below).  The error object for the
+final callback is just the error returned by whatever pipeline function failed
+(if any).
 
-This example is similar to the one above, except that it runs the steps in
-sequence and stops early because `pipeline` stops on the first error:
+If the `trackTiming` argument is `true`, then additional properties are
+available:
+
+* On the return value itself, `hrtimeStarted` is a high-resolution timestamp
+  recorded when `pipeline()` itself is invoked.
+* On the return value itself, `hrtimeElapsed` is a high-resolution timestamp
+  _delta_ describing how long the pipeline took.  This is the time elapsed
+  between the pipeline's `hrtimeStarted` timestamp and a timestamp recorded
+  immediately prior to invoking the pipeline completion callback.
+* On each operation, `hrtimeStarted` is a high-resolution timestamp recorded
+  immediately before that operation's function was invoked.
+* On each operation, `hrtimeElapsed` is a high-resolution timestamp delta
+  describing how long that operation took.  This is the time elapsed between the
+  operation's `hrtimeStarted` timestamp and a timestamp recorded immediately
+  after the operation's completion callback is invoked.
+
+Some of this information may seem redundant, since timestamps are recorded both
+at the end of each operation and the beginning of the next one.  However, in
+heavily loaded applications, it's possible for significant time to elapsed
+between those two events.  The timing information provided here allows callers
+to account for all time required by the pipeline, including the time between
+operations (which, if significant, generally represents time queued on the event
+loop).
+
+These timestamps are in the same format returned by Node's `process.hrtime()`
+API.  There are functions for working with these high-resolution timestamps in
+the [jsprim](https://github.com/davepacheco/node-jsprim) module.
+
+The `trackTiming` functionality is currently only available with `pipeline()`,
+but will likely be added to other functions here in the future.
+
+In this example, the steps are executed in sequence and the pipeline stops early
+because of the error:
 
 ```js
 console.log(mod_vasync.pipeline({
@@ -224,6 +259,81 @@ As a result, the status after the first tick looks like this:
 Note that the second and third stages are now "waiting", rather than "pending"
 in the `parallel` case.  The error and complete result look just like the
 parallel case.
+
+Here's an example when timing data is requested.  On the first tick:
+
+```
+console.log(mod_vasync.pipeline({
+    'trackTime': true,
+    'funcs': [
+        function f1(_, callback) { mod_dns.lookup('joyent.com', callback); },
+        function f2(_, callback) { mod_dns.lookup('github.com', callback); },
+        function f3(_, callback) { mod_dns.lookup('asdfaqsd.com', callback); }
+    ]
+}, function (err, results) {
+        console.log('error: %s', err.message);
+        console.log('results: %s', mod_util.inspect(results, null, 3));
+}));
+```
+
+On the first tick, this emits:
+
+```
+{ operations: 
+   [ { func: [Function: f1],
+       funcname: 'f1',
+       status: 'pending',
+       hrtimeStarted: [Object],
+       hrtimeElapsed: null },
+     { func: [Function: f2],
+       funcname: 'f2',
+       status: 'waiting',
+       hrtimeStarted: null,
+       hrtimeElapsed: null },
+     { func: [Function: f3],
+       funcname: 'f3',
+       status: 'waiting',
+       hrtimeStarted: null,
+       hrtimeElapsed: null } ],
+  successes: [],
+  ndone: 0,
+  nerrors: 0,
+  hrtimeStarted: [ 2502382, 672326390 ],
+  hrtimeElapsed: null }
+```
+
+(The `hrtimeStarted` field will vary from run to run.)  By the end, the result
+looks like this:
+
+```
+{ operations: 
+   [ { func: [Function: f1],
+       funcname: 'f1',
+       status: 'ok',
+       hrtimeStarted: [ 2502382, 672335494 ],
+       hrtimeElapsed: [ 0, 241258672 ],
+       err: null,
+       result: '165.225.147.21' },
+     { func: [Function: f2],
+       funcname: 'f2',
+       status: 'ok',
+       hrtimeStarted: [ 2502382, 914232012 ],
+       hrtimeElapsed: [ 0, 35286300 ],
+       err: null,
+       result: '192.30.252.129' },
+     { func: [Function: f3],
+       funcname: 'f3',
+       status: 'fail',
+       hrtimeStarted: [ 2502382, 949703165 ],
+       hrtimeElapsed: [ 0, 381212867 ],
+       err: { [Error: getaddrinfo ENOTFOUND] code: 'ENOTFOUND', errno: 'ENOTFOUND', syscall: 'getaddrinfo' },
+       result: undefined } ],
+  successes: [ '165.225.147.21', '192.30.252.129' ],
+  ndone: 3,
+  nerrors: 1,
+  hrtimeStarted: [ 2502382, 672326390 ],
+  hrtimeElapsed: [ 0, 658622573 ] }
+```
 
 
 ### forEachPipeline: invoke the same function on N inputs in series (and stop on failure)
