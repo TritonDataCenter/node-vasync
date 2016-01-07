@@ -213,6 +213,11 @@ available:
   operation's `hrtimeStarted` timestamp and a timestamp recorded immediately
   after the operation's completion callback is invoked.
 
+Timestamps will be `null` for events which have not happened.  That includes the
+start and elapsed times for operations that haven't been started yet, as well as
+the the start and elapsed times for operations that were skipped entirely
+because the pipeline was aborted due to an error.
+
 Some of this information may seem redundant, since timestamps are recorded both
 at the end of each operation and the beginning of the next one.  However, in
 heavily loaded applications, it's possible for significant time to elapse
