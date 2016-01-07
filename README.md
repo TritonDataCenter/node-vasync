@@ -215,7 +215,7 @@ available:
 
 Some of this information may seem redundant, since timestamps are recorded both
 at the end of each operation and the beginning of the next one.  However, in
-heavily loaded applications, it's possible for significant time to elapsed
+heavily loaded applications, it's possible for significant time to elapse
 between those two events.  The timing information provided here allows callers
 to account for all time required by the pipeline, including the time between
 operations (which, if significant, generally represents time queued on the event
