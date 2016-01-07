@@ -184,7 +184,7 @@ The named arguments (that go inside `args`) are:
 
 * `funcs`: input functions, to be invoked in series
 * `arg`: arbitrary argument that will be passed to each function
-* [`trackTiming`]: optional boolean indicating that high-resolution timestamps
+* [`trackTime`]: optional boolean indicating that high-resolution timestamps
   should be recorded at the start and end of each pipeline function.
 
 The functions are invoked in order as `func(arg, callback)`, where "arg" is the
@@ -192,12 +192,12 @@ user-supplied argument from "args" and "callback" should be invoked in the usual
 way.  If any function emits an error, the whole pipeline stops.
 
 The return value and the arguments to the final callback are exactly the same as
-for `parallel`, except that if `trackTiming` is `true`, then additional timing
+for `parallel`, except that if `trackTime` is `true`, then additional timing
 related properties are available (described below).  The error object for the
 final callback is just the error returned by whatever pipeline function failed
 (if any).
 
-If the `trackTiming` argument is `true`, then additional properties are
+If the `trackTime` argument is `true`, then additional properties are
 available:
 
 * On the return value itself, `hrtimeStarted` is a high-resolution timestamp
@@ -225,7 +225,7 @@ These timestamps are in the same format returned by Node's `process.hrtime()`
 API.  There are functions for working with these high-resolution timestamps in
 the [jsprim](https://github.com/davepacheco/node-jsprim) module.
 
-The `trackTiming` functionality is currently only available with `pipeline()`,
+The `trackTime` functionality is currently only available with `pipeline()`,
 but will likely be added to other functions here in the future.
 
 In this example, the steps are executed in sequence and the pipeline stops early

@@ -11,8 +11,9 @@
 		"test": "./node_modules/.bin/tap tests/ && ./node_modules/.bin/nodeunit tests/compat.js"
 	},
 	"devDependencies": {
-		"tap": "~0.4.8",
-		"nodeunit": "0.8.7"
+		"jsprim": "1.2.2",
+		"nodeunit": "0.8.7",
+		"tap": "~0.4.8"
 	},
 	"dependencies": {
 		"verror": "1.6.0"
