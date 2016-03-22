@@ -1,6 +1,6 @@
 {
 	"name": "vasync",
-	"version": "1.6.3",
+	"version": "1.6.4",
 	"description": "utilities for observable asynchronous control flow",
 	"main": "./lib/vasync.js",
 	"repository": {
