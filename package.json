@@ -1,6 +1,6 @@
 {
 	"name": "vasync",
-	"version": "1.6.4",
+	"version": "2.0.0",
 	"description": "utilities for observable asynchronous control flow",
 	"main": "./lib/vasync.js",
 	"repository": {
@@ -8,7 +8,7 @@
 		"url": "git://github.com/davepacheco/node-vasync.git"
 	},
 	"scripts": {
-		"test": "./node_modules/.bin/tap tests/ && ./node_modules/.bin/nodeunit tests/compat.js"
+		"test": "./node_modules/.bin/tap --stdout tests/ && ./node_modules/.bin/nodeunit tests/compat.js && ./node_modules/.bin/nodeunit tests/compat_tryEach.js"
 	},
 	"devDependencies": {
 		"tap": "~0.4.8",

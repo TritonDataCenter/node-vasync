@@ -41,6 +41,8 @@ have several ways of getting at this state:
   invoke the same function on N inputs in parallel
 * [pipeline](#pipeline-invoke-n-functions-in-series-and-stop-on-failure): invoke
   N functions in series (and stop on failure)
+* [tryEach](#tryeach-invoke-n-functions-in-series-and-stop-on-success): invoke
+  N functions in series (and stop on success)
 * [forEachPipeline](#foreachpipeline-invoke-the-same-function-on-n-inputs-in-series-and-stop-on-failure):
   invoke the same function on N inputs in series (and stop on failure)
 * [waterfall](#waterfall-invoke-n-functions-in-series-stop-on-failure-and-propagate-results):
@@ -224,6 +226,95 @@ As a result, the status after the first tick looks like this:
 Note that the second and third stages are now "waiting", rather than "pending"
 in the `parallel` case.  The error and complete result look just like the
 parallel case.
+
+### tryEach: invoke N functions in series (and stop on success)
+
+Synopsis: `tryEach(funcs, callback)`
+
+The `tryEach` function invokes each of the asynchronous functions in `funcs`
+serially. Each function takes a single argument: an interstitial-callback.
+`tryEach` will keep calling the functions until one of them succeeds (or they
+all fail).  At the end, the terminating-callback is invoked with the error
+and/or results provided by the last function that was called (either the last
+one that failed or the first one that succeeded).
+
+This example is similar to the one above, except that it runs the steps in
+sequence and stops early because `tryEach` stops on the first success:
+
+```js
+console.log(mod_vasync.tryEach([
+        function f1 (callback) { mod_fs.stat('/notreal', callback); },
+        function f2 (callback) { mod_fs.stat('/noexist', callback); },
+        function f3 (callback) { mod_fs.stat('/var', callback); },
+        function f4 (callback) { mod_fs.stat('/noexist', callback); }
+    ],
+    function (err, results) {
+            console.log('error: %s', err);
+            console.log('results: %s', mod_util.inspect(results));
+}));
+
+```
+
+The above code will stop when it finishes f3, and we will only print a single
+result and no errors:
+
+```js
+error: null
+results: { dev: 65760,
+  mode: 16877,
+  nlink: 41,
+  uid: 0,
+  gid: 3,
+  rdev: -1,
+  blksize: 2560,
+  ino: 11,
+  size: 41,
+  blocks: 7,
+  atime: Thu May 28 2015 16:21:25 GMT+0000 (UTC),
+  mtime: Thu Jan 21 2016 22:08:50 GMT+0000 (UTC),
+  ctime: Thu Jan 21 2016 22:08:50 GMT+0000 (UTC) }
+```
+
+If we comment out `f3`, we get the following output:
+
+```js
+error: Error: ENOENT, stat '/noexist'
+results: undefined
+```
+
+Note that: there is a mismatch (inherited from `async`) between the semantics
+of the interstitial callback and the sematics of the terminating callback. See
+the following example:
+
+```js
+console.log(mod_vasync.tryEach([
+        function f1 (callback) { callback(new Error()); },
+        function f2 (callback) { callback(new Error()); },
+        function f3 (callback) { callback(null, 1, 2, 3); },
+        function f4 (callback) { callback(null, 1); }
+    ],
+    function (err, results) {
+            console.log('error: %s', err);
+            console.log('results: %s', mod_util.inspect(results));
+}));
+
+```
+
+We pass one or more results to the terminating-callback via the
+interstitial-callback's arglist -- `(err, res1, res2, ...)`. From the
+callback-implementor's perspective, the results get wrapped up in an array
+`(err, [res1, res2, ...])` -- unless there is only one result, which simply
+gets passed through as the terminating callback's second argument. This means
+that when we call the callback in `f3` above, the terminating callback receives
+the list `[1, 2, 3]` as its second argument. If, we comment out `f3`, we will
+end up calling the callback in `f4` which will end up invoking the terminating
+callback with a single result: `1`, instead of `[1]`.
+
+
+In short, be mindful that there is not always a 1:1 correspondence between the
+terminating callback that you define, and the interstitial callback that gets
+called from the function.
+
 
 
 ### forEachPipeline: invoke the same function on N inputs in series (and stop on failure)

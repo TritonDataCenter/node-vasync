@@ -17,7 +17,7 @@ JSSTYLE		 = jsstyle
 #
 # Files
 #
-JS_FILES	:= $(shell find lib tests -name '*.js' -not -name compat.js)
+JS_FILES	:= $(shell find lib tests -name '*.js' -not -name compat\*.js)
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSL_CONF_NODE	 = jsl.node.conf
