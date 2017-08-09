@@ -15,7 +15,7 @@
 		"nodeunit": "0.8.7"
 	},
 	"dependencies": {
-		"verror": "1.6.0"
+		"verror": "1.10.0"
 	},
 	"engines": [
 		"node >=0.6.0"

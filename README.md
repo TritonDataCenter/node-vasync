@@ -45,6 +45,8 @@ have several ways of getting at this state:
   N functions in series (and stop on success)
 * [forEachPipeline](#foreachpipeline-invoke-the-same-function-on-n-inputs-in-series-and-stop-on-failure):
   invoke the same function on N inputs in series (and stop on failure)
+* [filter/filterSeries/filterLimit](#filterfilterlimitfilterseries-filter-n-inputs-serially-or-concurrently):
+  filter N inputs serially or concurrently
 * [waterfall](#waterfall-invoke-n-functions-in-series-stop-on-failure-and-propagate-results):
   like pipeline, but propagating results between stages
 * [barrier](#barrier-coordinate-multiple-concurrent-operations): coordinate
@@ -381,6 +383,47 @@ This prints:
 ```
 func2 got "37" from func1
 better stop early
+```
+
+### filter/filterLimit/filterSeries: filter N inputs serially or concurrently
+
+Synopsis: `filter(inputs, filterFunc, callback)`
+
+Synopsis: `filterSeries(inputs, filterFunc, callback)`
+
+Synopsis: `filterLimit(inputs, limit, filterFunc, callback)`
+
+These functions take an array (of anything) and a function to call on each
+element of the array.  The function must callback with a true or false value as
+the second argument or an error object as the first argument.  False values
+will result in the element being filtered out of the results array.  An error
+object passed as the first argument will cause the filter function to stop
+processing new elements and callback to the caller with the error immediately.
+Original input array order is maintained.
+
+`filter` and `filterSeries` are analogous to calling `filterLimit` with
+a limit of `Infinity` and `1` respectively.
+
+
+```js
+var inputs = [
+    'joyent.com',
+    'github.com',
+    'asdfaqsdfj.com'
+];
+function filterFunc(input, cb) {
+    mod_dns.resolve(input, function (err, results) {
+        if (err) {
+            cb(null, false);
+        } else {
+            cb(null, true);
+        }
+    }
+}
+mod_vasync.filter(inputs, filterFunc, function (err, results) {
+    // err => undefined
+    // results => ['joyent.com', 'github.com']
+});
 ```
 
 ### barrier: coordinate multiple concurrent operations
