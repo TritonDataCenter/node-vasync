@@ -4,7 +4,18 @@
 
 None yet.
 
+## v2.1.0
+
+* #33 want filter, filterLimit, and filterSeries
+* #35 pipeline does not pass rv-object to final callback
+
+
 ## v2.0.0
+
+** WARNING
+
+Do not use this version (v2.0.0), as it has broken pipeline and forEachPipeline
+functions.
 
 **Breaking Changes:**
 
