@@ -47,6 +47,8 @@ have several ways of getting at this state:
   invoke the same function on N inputs in series (and stop on failure)
 * [filter/filterSeries/filterLimit](#filterfilterlimitfilterseries-filter-n-inputs-serially-or-concurrently):
   filter N inputs serially or concurrently
+* [whilst](#whilst-invoke-a-function-repeatedly-until-a-stopping-condition-is-met):
+  invoke a function repeatedly until a stopping condition is met
 * [waterfall](#waterfall-invoke-n-functions-in-series-stop-on-failure-and-propagate-results):
   like pipeline, but propagating results between stages
 * [barrier](#barrier-coordinate-multiple-concurrent-operations): coordinate
@@ -424,6 +426,49 @@ mod_vasync.filter(inputs, filterFunc, function (err, results) {
     // err => undefined
     // results => ['joyent.com', 'github.com']
 });
+```
+
+### whilst: invoke a function repeatedly until a stopping condition is met
+
+Synopsis: `whilst(testFunc, iterateFunc, callback)`
+
+Repeatedly invoke `iterateFunc` while `testFunc` returns a true value.
+`iterateFunc` is an asychronous function that must call its callback (the first
+and only argument given to it) when it is finished with an optional error
+object as the first argument, and any other arbitrary arguments.  If an error
+object is given as the first argument, `whilst` will finish and call `callback`
+with the error object.  `testFunc` is a synchronous function that must return
+a value - if the value resolves to true `whilst` will invoke `iterateFunc`, if
+it resolves to false `whilst` will finish and invoke `callback` with the last
+set of arguments `iterateFunc` called back with.
+
+`whilst` also returns an object suitable for introspecting the current state of
+the specific `whilst` invocation which contains the following properties:
+
+* `finished`: boolean if this invocation has finished or is in progress
+* `iterations`: number of iterations performed (calls to `iterateFunc`)
+
+Compatible with `async.whilst`
+
+```js
+var n = 0;
+
+var w = mod_vasync.whilst(
+    function testFunc() {
+        return (n < 5);
+    },
+    function iterateFunc(cb) {
+        n++;
+        cb(null, {n: n});
+    },
+    function whilstDone(err, arg) {
+        // err => undefined
+        // arg => {n: 5}
+        // w => {finished: true, iterations: 5}
+    }
+);
+
+// w => {finished: false, iterations: 0}
 ```
 
 ### barrier: coordinate multiple concurrent operations

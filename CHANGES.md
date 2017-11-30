@@ -4,6 +4,10 @@
 
 None yet.
 
+## v2.2.0
+
+* #37 want whilst
+
 ## v2.1.0
 
 * #33 want filter, filterLimit, and filterSeries
