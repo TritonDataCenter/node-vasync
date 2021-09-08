@@ -1,6 +1,6 @@
 # -*- mode: makefile -*-
 #
-# Copyright (c) 2012, Joyent, Inc. All rights reserved.
+# Copyright (c) 2021, Joyent, Inc. All rights reserved.
 #
 # Makefile.targ: common targets.
 #
@@ -84,8 +84,9 @@ BASHSTYLE	?= tools/bashstyle
 CP		?= cp
 CSCOPE		?= cscope
 CSCOPE_DIRS	?= .
-JSL		?= jsl
-JSSTYLE		?= jsstyle
+JSL_EXEC	?= deps/javascriptlint/build/install/jsl
+JSL		?= $(JSL_EXEC)
+JSSTYLE		?= deps/jsstyle/jsstyle
 MKDIR		?= mkdir -p
 MV		?= mv
 RESTDOWN_FLAGS	?=
@@ -156,6 +157,9 @@ check-bash: $(BASH_FILES:%=%.bashchk) $(BASH_FILES:%=%.bashstyle)
 
 %.bashstyle: %
 	$(BASHSTYLE) $^
+
+$(JSL_EXEC):
+	make -C deps/javascriptlint install
 
 .PHONY: check-jsl check-jsl-node check-jsl-web
 check-jsl: check-jsl-node check-jsl-web

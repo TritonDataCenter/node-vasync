@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Joyent, Inc. All rights reserved.
+# Copyright (c) 2021, Joyent, Inc. All rights reserved.
 #
 # Makefile: top-level Makefile
 #
@@ -7,12 +7,6 @@
 # to supply common targets (javascriptlint, jsstyle, restdown, etc.), which are
 # used by other repos as well.
 #
-
-#
-# Tools must be installed on the path
-#
-JSL		 = jsl
-JSSTYLE		 = jsstyle
 
 #
 # Files
@@ -25,7 +19,7 @@ JSL_CONF_NODE	 = jsl.node.conf
 all:
 	npm install
 
-test:
+test: all
 	npm test
 
 include ./Makefile.targ
