@@ -5,7 +5,7 @@
 	"main": "./lib/vasync.js",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/joyent/node-vasync.git"
+		"url": "https://github.com/joyent/node-vasync.git"
 	},
 	"scripts": {
 		"test": "./node_modules/.bin/tap --stdout tests/ && ./node_modules/.bin/nodeunit tests/compat.js && ./node_modules/.bin/nodeunit tests/compat_tryEach.js"
