@@ -771,3 +771,13 @@ This example outputs:
     first task ends
     second task begins
     second task ends
+
+## Usage with synchronous test libraries
+
+Some mockup libraries (like testdouble) makes it easy to turn asynchronous code
+into synchronous code (for easier testing). By default, vasync breaks synchronous
+flow by calling your callbacks inside a `setImmediate` block.
+
+This behaviour is desirable in production (generally also when running tests),
+yet it can be disabled by setting the `VASYNC_MODE` environment variable to
+`direct` when required.
